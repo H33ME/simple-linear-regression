@@ -1,0 +1,97 @@
+#load the required package 
+
+library("MASS")
+#create a fitted linear model for survey data with 
+#height as the response variable and Wr.Hnd as the explanatory variable
+
+surv.fit<-lm(Height~Wr.Hnd,data = survey)
+
+# create a dataframe for prediction
+
+vals<- data.frame(Wr.Hnd=c(12,15.2,17,19.9))
+
+#predict the dataframe vals using 99% CI
+
+predict(surv.fit,newdata = vals,interval = "confidence",level = 0.99)
+
+#numeric vector that contain NA 
+incomplete.obs<-which(is.na(survey$Height)|is.na(survey$Wr.Hnd))
+
+#total number of NA
+
+N<-length(incomplete.obs)
+#predictor variable=x=survey$Wr.Hnd
+#response variable=y=survey$Height
+
+#x is total number of student writing hand span exclding NA
+x<-survey$Wr.Hnd[-incomplete.obs]
+
+#y is the total number of student height excluding NA
+y<-survey$Height[-incomplete.obs]
+#slope of the model
+B1.hat<- cor(x,y)*(sd(y)/sd(x))
+B1.hat
+#intercept of the model
+B0.hat<- mean(y)-(B1.hat*mean(x))
+B0.hat
+
+#plot the scattered plot for Height against Pulse
+plot(survey$Height~survey$Pulse,xlab="Pulse rate(beat per min)",
+     ylab = "Height of the student(cm)",xlim=c(30,110),ylim=c(140,210))
+#draw a line for the fitted model
+
+abline(fit.pulse,lwd=3)
+#extract iintercept and slope of the model
+
+my.coef<-coef(fit.pulse)
+#intercept
+
+B0_hat<-my.coef[1]
+#slope
+
+B1_hat<-my.coef[2]
+#confidence interval
+
+confint(fit.pulse,level = 0.90)
+#example that will help create confidence interval and prediction intervals 
+
+var<- data.frame(Pulse=c(39,94))
+#predincting confidence and prediction interval for var using predict()
+
+pred.ci<-predict(fit.pulse,newdata = var,level = 0.90,interval = "confidence")
+pred.pi<-predict(fit.pulse,newdata = var,interval = "prediction",level = 0.90)
+# adding the points on the fitted data
+
+points(var[,1],pred.ci[,1],col="red",pch=8)
+#adding lines using segment() for both intervals
+
+segments(x0=c(var[1,1],var[2,1]),y0=c(pred.ci[1,2],pred.ci[2,2]),
+         x1=c(var[1,1],var[2,1]),y1=c(pred.ci[1,3],pred.ci[2,3]),col = "blue",lty = 2)
+segments(x0=c(var[1,1],var[2,1]),y0=c(pred.pi[1,2],pred.pi[2,2]),
+              x1=c(var[1,1],var[2,1]),y1=c(pred.pi[1,3],pred.pi[2,3]),col = "red",lty = 3)
+#create a sequence for pulse for the  interval band
+
+var.seq<- data.frame(Pulse=seq(35,110,length=1000))
+#create the confidence interval band and prediction interval band
+
+c.band<-predict(fit.pulse,newdata = var.seq,interval = "confidence",level = 0.90)
+p.band<-predict(fit.pulse,newdata = var.seq,interval = "prediction",level = 0.90)
+#add line for the lower and upper level for both interval bands
+
+lines(var.seq[,1],c.band[,2],lty=2,col="blue")
+lines(var.seq[,1],c.band[,3],lty=2,col="blue")
+lines(var.seq[,1],p.band[,2],lty=2,col="red")
+lines(var.seq[,1],p.band[,3],lty=2,col="red")
+
+#create vector that contain NA for Height and Pulse
+
+incom.obs<-which(is.na(survey$Pulse)|is.na(survey$Height))
+#variable that contain the sample mean for  Height
+x.bar.height<-mean(survey$Height[-incom.obs])
+#add line for the student height mean
+
+abline(h=x.bar.height,lty=4,lwd=2)
+#add a legend
+
+legend("bottomleft",legend = c("Fit","90% CI.Band","90% PI.Band","S.mean.height"),
+       lty = c(1,2,3,4),col = c("black","blue","red"))
